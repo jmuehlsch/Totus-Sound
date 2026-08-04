@@ -16,6 +16,7 @@
 //TODO: Keyboard shortcuts (CMD+Z)
 
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 struct TheaterFileCommandActions {
@@ -37,9 +38,6 @@ struct ContentView: View {
     @State private var selectedSpeakerID: TheaterSpeaker.ID?
     @State private var cuesAreVisible = true
     @State private var showingImporter = false
-    @State private var showingExporter = false
-    @State private var exportDocument = TextFileDocument(text: "")
-    @State private var exportFilename = "Totus-Theater-Setup.json"
     @State private var statusMessage = "Ready"
 
     private var selectedLayoutShapeBinding: Binding<LayoutShape>? {
@@ -95,19 +93,7 @@ struct ContentView: View {
         .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json]) { result in
             importProject(from: result)
         }
-        .fileExporter(
-            isPresented: $showingExporter,
-            document: exportDocument,
-            contentType: .json,
-            defaultFilename: exportFilename
-        ) { result in
-            switch result {
-            case .success:
-                statusMessage = "Export complete"
-            case .failure(let error):
-                statusMessage = "Export failed: \(error.localizedDescription)"
-            }
-        }
+
     }
 
     private var layoutTab: some View {
@@ -486,27 +472,64 @@ struct ContentView: View {
     private func exportSetup() {
         do {
             let data = try JSONEncoder.pretty.encode(project.setup)
-            exportDocument = TextFileDocument(text: String(decoding: data, as: UTF8.self))
-            exportFilename = safeFilename(project.setup.name, fallback: "Totus-Theater-Setup") + "-Setup.json"
-            showingExporter = true
+            let filename = safeFilename(project.setup.name, fallback: "Totus-Theater-Setup") + "-Setup.json"
+            
+            let panel = NSSavePanel()
+            panel.nameFieldStringValue = filename
+            panel.allowedContentTypes = [.json]
+            
+            panel.begin { response in
+                if response == .OK, let url = panel.url {
+                    do {
+                        try data.write(to: url)
+                        Task { @MainActor in
+                            self.statusMessage = "Export successful!"
+                        }
+                    } catch {
+                        Task { @MainActor in
+                            self.statusMessage = "Failed to save file: \(error.localizedDescription)"
+                        }
+                    }
+                }
+            }
         } catch {
-            statusMessage = "Could not prepare setup export: \(error.localizedDescription)"
+                statusMessage = "Could not prepare setup export: \(error.localizedDescription)"
+            }
         }
-    }
-
+    
     private func exportCueList() {
         do {
             let rows = project.cues.map { cue in
                 CueExportRow(cue: cue, calculation: MixCalculator.calculate(cue: cue, setup: project.setup))
             }
+
             let data = try JSONEncoder.pretty.encode(rows)
-            exportDocument = TextFileDocument(text: String(decoding: data, as: UTF8.self))
-            exportFilename = safeFilename(project.setup.name, fallback: "Totus-Cues") + "-Cue-List.json"
-            showingExporter = true
+            let filename = safeFilename(project.setup.name, fallback: "Totus-Cues") + "-Cue-List.json"
+            
+            let panel = NSSavePanel()
+            panel.nameFieldStringValue = filename
+            panel.allowedContentTypes = [.json]
+            
+            panel.begin { response in
+                if response == .OK, let url = panel.url {
+                    do {
+                        try data.write(to: url)
+                        
+                        Task { @MainActor in
+                            self.statusMessage = "Export successful!"
+                        }
+                    } catch {
+                        Task { @MainActor in
+                            self.statusMessage = "Failed to save file: \(error.localizedDescription)"
+                        }
+                    }
+                }
+            }
         } catch {
-            statusMessage = "Could not prepare cue export: \(error.localizedDescription)"
+                statusMessage = "Could not prepare cue export: \(error.localizedDescription)"
+            }
         }
-    }
+
 
     private func safeFilename(_ value: String, fallback: String) -> String {
         let allowed = value.map { character in
