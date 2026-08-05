@@ -614,6 +614,7 @@ private struct TheaterPlot: View {
                             isDimmed: mode == .cues,
                             onSelect: { selectedLayoutShapeID = region.id }
                         )
+                        .zIndex(selectedLayoutShapeID == region.id ? 1 : 0)
                     }
                 }
 
@@ -728,9 +729,9 @@ private struct PlotViewportControls: View {
                 Image(systemName: "plus.magnifyingglass")
             }
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.glass)
         .padding(8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+//        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 }
 
@@ -892,21 +893,39 @@ private struct ShapeOverlay: View {
     let isEditable: Bool
     let isDimmed: Bool
     let onSelect: () -> Void
+    
     @State private var shapeDragStartPoints: [NormalizedPoint]?
     @State private var vertexDragStartPoint: NormalizedPoint?
 
     var body: some View {
         ZStack {
-            shapePath
-                .fill(shape.color.swiftUIColor.opacity(shape.kind == .theater ? 0.05 : 0.18))
-            shapePath
-                .stroke(isSelected ? Color.accentColor : shape.color.swiftUIColor.opacity(0.9), lineWidth: isSelected ? 3 : 1.5)
+            ZStack {
+                shapePath
+                    .fill(shape.color.swiftUIColor.opacity(shape.kind == .theater ? 0.05 : 0.18))
+                shapePath
+                    .stroke(isSelected ? Color.accentColor : shape.color.swiftUIColor.opacity(0.9), lineWidth: isSelected ? 3 : 1.5)
+            }
+            .contentShape(PolygonHitShape(points: shape.displayPoints(in: size, viewport: viewport)))
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .named("plot"))
+                    .onChanged { value in
+                        onSelect()
+                        guard isEditable else { return }
+                        guard vertexDragStartPoint == nil else { return }
+                        
+                        let start = shapeDragStartPoints ?? shape.points
+                        shapeDragStartPoints = start
+                        let translation = viewport.normalizedTranslation(for: value.translation, in: size)
+                        shape.points = start.map { $0.translated(by: translation) }
+                    }
+                    .onEnded { _ in
+                        shapeDragStartPoints = nil
+                    }
+            )
 
             if isSelected && isEditable {
                 ForEach(shape.points.indices, id: \.self) { index in
                     VertexHandle(visibleSize: vertexHandleSize, targetSize: vertexDragTargetSize)
-                        .position(viewport.screenPoint(for: shape.points[index], in: size))
-                        .zIndex(10)
                         .highPriorityGesture(
                             DragGesture(minimumDistance: 0, coordinateSpace: .named("plot"))
                                 .onChanged { value in
@@ -919,26 +938,13 @@ private struct ShapeOverlay: View {
                                     vertexDragStartPoint = nil
                                 }
                         )
+                        .position(viewport.screenPoint(for: shape.points[index], in: size))
+                        .zIndex(10)
                 }
             }
         }
+        .frame(width: size.width, height: size.height)
         .opacity(isDimmed ? 0.45 : 1)
-        .contentShape(PolygonHitShape(points: shape.displayPoints(in: size, viewport: viewport)))
-        .gesture(
-            DragGesture(minimumDistance: 0, coordinateSpace: .named("plot"))
-                .onChanged { value in
-                    onSelect()
-                    guard isEditable else { return }
-                    guard vertexDragStartPoint == nil else { return }
-                    let start = shapeDragStartPoints ?? shape.points
-                    shapeDragStartPoints = start
-                    let translation = viewport.normalizedTranslation(for: value.translation, in: size)
-                    shape.points = start.map { $0.translated(by: translation) }
-                }
-                .onEnded { _ in
-                    shapeDragStartPoints = nil
-                }
-        )
         .allowsHitTesting(isEditable)
     }
 
