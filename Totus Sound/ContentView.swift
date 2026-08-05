@@ -5,14 +5,12 @@
 //  Created by Julian Muehlschlegel on 8/2/26.
 //
 
-//TODO: Add zooming/panning, so that you can create bigger or smaller theatres
-//TODO: Fix weird bug in regions tab, where when someone clicks anywhere, it immediately grabs on of the regions; you can't change the other regions
 //TODO: Add more colour options
 //TODO: Add save state, so you can return to a project.
 //TODO: Add more icon options
 //TODO: App icon
 //TODO: About section
-//TODO: Add larger clicking area
+//TODO: Add larger clicking area for list items
 //TODO: Keyboard shortcuts (CMD+Z)
 
 import SwiftUI
@@ -566,6 +564,7 @@ private struct TheaterPlot: View {
     let cuesAreVisible: Bool
     let onDeleteCue: (Cue.ID) -> Void
     let onToggleCueVisibility: (Cue.ID) -> Void
+    @State private var viewport = PlotViewport()
 
     var body: some View {
         GeometryReader { geometry in
@@ -580,11 +579,12 @@ private struct TheaterPlot: View {
                         selectedSpeakerID = nil
                     }
 
-                grid(in: size)
+                grid(in: size, viewport: viewport)
 
                 ShapeOverlay(
                     shape: $project.setup.theater,
                     size: size,
+                    viewport: viewport,
                     isSelected: selectedLayoutShapeID == project.setup.theater.id,
                     isEditable: mode == .layout,
                     isDimmed: false,
@@ -595,6 +595,7 @@ private struct TheaterPlot: View {
                     ShapeOverlay(
                         shape: $project.setup.stage,
                         size: size,
+                        viewport: viewport,
                         isSelected: selectedLayoutShapeID == project.setup.stage.id,
                         isEditable: mode == .layout,
                         isDimmed: false,
@@ -607,6 +608,7 @@ private struct TheaterPlot: View {
                         ShapeOverlay(
                             shape: $region,
                             size: size,
+                            viewport: viewport,
                             isSelected: selectedLayoutShapeID == region.id,
                             isEditable: mode == .layout,
                             isDimmed: mode == .cues,
@@ -621,6 +623,7 @@ private struct TheaterPlot: View {
                             DraggableSpeakerMarker(
                                 speaker: $speaker,
                                 size: size,
+                                viewport: viewport,
                                 isSelected: selectedSpeakerID == speaker.id,
                                 isEditable: mode == .speakers,
                                 isDimmed: mode == .cues,
@@ -636,6 +639,7 @@ private struct TheaterPlot: View {
                             DraggableCueMarker(
                                 cue: $cue,
                                 size: size,
+                                viewport: viewport,
                                 isSelected: selectedCueID == cue.id,
                                 isEditable: mode == .cues,
                                 onSelect: { selectedCueID = cue.id },
@@ -654,76 +658,219 @@ private struct TheaterPlot: View {
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                     .padding(12)
             }
+            .overlay(alignment: .bottomTrailing) {
+                PlotViewportControls(viewport: $viewport)
+                    .padding(12)
+            }
+            .background(
+                TrackpadViewportReader(
+                    onScroll: { delta in
+                        viewport.pan.width += delta.width
+                        viewport.pan.height += delta.height
+                    },
+                    onMagnify: { magnification, location in
+                        viewport.zoom(by: magnification, around: location, in: size)
+                    }
+                )
+            )
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .padding()
         }
     }
 
-    private func grid(in size: CGSize) -> some View {
+    private func grid(in size: CGSize, viewport: PlotViewport) -> some View {
         Canvas { context, _ in
             var path = Path()
-            for index in 0...10 {
-                let x = size.width * CGFloat(index) / 10
+            let spacing: CGFloat = 0.1
+            let minX = floor((0 - viewport.pan.width) / max(size.width * viewport.zoom, 1) / spacing) * spacing
+            let maxX = ceil((size.width - viewport.pan.width) / max(size.width * viewport.zoom, 1) / spacing) * spacing
+            let minY = floor((0 - viewport.pan.height) / max(size.height * viewport.zoom, 1) / spacing) * spacing
+            let maxY = ceil((size.height - viewport.pan.height) / max(size.height * viewport.zoom, 1) / spacing) * spacing
+
+            var xValue = minX
+            while xValue <= maxX {
+                let x = xValue * size.width * viewport.zoom + viewport.pan.width
                 path.move(to: CGPoint(x: x, y: 0))
                 path.addLine(to: CGPoint(x: x, y: size.height))
+                xValue += spacing
+            }
 
-                let y = size.height * CGFloat(index) / 10
+            var yValue = minY
+            while yValue <= maxY {
+                let y = yValue * size.height * viewport.zoom + viewport.pan.height
                 path.move(to: CGPoint(x: 0, y: y))
                 path.addLine(to: CGPoint(x: size.width, y: y))
+                yValue += spacing
             }
             context.stroke(path, with: .color(.secondary.opacity(0.16)), lineWidth: 1)
         }
     }
 }
 
-private struct ShapeOverlay: View {
-    @Binding var shape: LayoutShape
-    let size: CGSize
-    let isSelected: Bool
-    let isEditable: Bool
-    let isDimmed: Bool
-    let onSelect: () -> Void
+private struct PlotViewportControls: View {
+    @Binding var viewport: PlotViewport
 
     var body: some View {
-        ZStack {
-            shapePath
-                .fill(shape.color.swiftUIColor.opacity(shape.kind == .theater ? 0.05 : 0.18))
-            shapePath
-                .stroke(isSelected ? Color.accentColor : shape.color.swiftUIColor.opacity(0.9), lineWidth: isSelected ? 3 : 1.5)
-
-            if isSelected && isEditable {
-                ForEach(shape.points.indices, id: \.self) { index in
-                    Circle()
-                        .fill(.background)
-                        .overlay(Circle().stroke(Color.accentColor, lineWidth: 2))
-                        .frame(width: 14, height: 14)
-                        .position(shape.points[index].cgPoint(in: size))
-                        .gesture(
-                            DragGesture(minimumDistance: 0, coordinateSpace: .named("plot"))
-                                .onChanged { value in
-                                    onSelect()
-                                    shape.points[index] = NormalizedPoint(location: value.location, in: size)
-                                }
-                        )
-                }
+        HStack(spacing: 6) {
+            Button {
+                viewport.zoomOut()
+            } label: {
+                Image(systemName: "minus.magnifyingglass")
+            }
+            Button {
+                viewport.reset()
+            } label: {
+                Image(systemName: "arrow.counterclockwise")
+            }
+            Button {
+                viewport.zoomIn()
+            } label: {
+                Image(systemName: "plus.magnifyingglass")
             }
         }
-        .opacity(isDimmed ? 0.45 : 1)
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0, coordinateSpace: .named("plot"))
-                .onChanged { value in
-                    onSelect()
-                    guard isEditable else { return }
-                    shape.moveCenter(to: NormalizedPoint(location: value.location, in: size))
-                }
-        )
-        .allowsHitTesting(isEditable)
+        .buttonStyle(.bordered)
+        .padding(8)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+private struct TrackpadViewportReader: NSViewRepresentable {
+    let onScroll: (CGSize) -> Void
+    let onMagnify: (CGFloat, CGPoint) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onScroll: onScroll, onMagnify: onMagnify)
     }
 
-    private var shapePath: Path {
+    func makeNSView(context: Context) -> TrackingView {
+        let view = TrackingView()
+        context.coordinator.view = view
+        context.coordinator.installMonitor()
+        return view
+    }
+
+    func updateNSView(_ nsView: TrackingView, context: Context) {
+        context.coordinator.onScroll = onScroll
+        context.coordinator.onMagnify = onMagnify
+        context.coordinator.view = nsView
+    }
+
+    static func dismantleNSView(_ nsView: TrackingView, coordinator: Coordinator) {
+        coordinator.removeMonitor()
+    }
+
+    final class TrackingView: NSView {
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            nil
+        }
+    }
+
+    final class Coordinator {
+        var onScroll: (CGSize) -> Void
+        var onMagnify: (CGFloat, CGPoint) -> Void
+        weak var view: TrackingView?
+        private var monitor: Any?
+
+        init(onScroll: @escaping (CGSize) -> Void, onMagnify: @escaping (CGFloat, CGPoint) -> Void) {
+            self.onScroll = onScroll
+            self.onMagnify = onMagnify
+        }
+
+        func installMonitor() {
+            guard monitor == nil else { return }
+            monitor = NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel, .magnify]) { [weak self] event in
+                guard let self, let view, let window = view.window, event.window === window else {
+                    return event
+                }
+
+                let locationInWindow = event.locationInWindow
+                let locationInView = view.convert(locationInWindow, from: nil)
+                guard view.bounds.contains(locationInView) else {
+                    return event
+                }
+
+                switch event.type {
+                case .scrollWheel:
+                    onScroll(CGSize(width: event.scrollingDeltaX, height: event.scrollingDeltaY))
+                case .magnify:
+                    onMagnify(event.magnification, locationInView)
+                default:
+                    break
+                }
+
+                return event
+            }
+        }
+
+        func removeMonitor() {
+            if let monitor {
+                NSEvent.removeMonitor(monitor)
+            }
+            monitor = nil
+        }
+
+        deinit {
+            removeMonitor()
+        }
+    }
+}
+
+private struct PlotViewport: Equatable {
+    var zoom: CGFloat = 1
+    var pan: CGSize = .zero
+
+    mutating func zoomIn() {
+        zoom = Self.clampedZoom(zoom * 1.25)
+    }
+
+    mutating func zoomOut() {
+        zoom = Self.clampedZoom(zoom / 1.25)
+    }
+
+    mutating func reset() {
+        zoom = 1
+        pan = .zero
+    }
+
+    mutating func zoom(by magnification: CGFloat, around location: CGPoint, in size: CGSize) {
+        let before = normalizedPoint(for: location, in: size)
+        zoom = Self.clampedZoom(zoom * (1 + magnification))
+        let after = screenPoint(for: before, in: size)
+        pan.width += location.x - after.x
+        pan.height += location.y - after.y
+    }
+
+    static func clampedZoom(_ value: CGFloat) -> CGFloat {
+        min(max(value, 0.35), 5)
+    }
+
+    func screenPoint(for point: NormalizedPoint, in size: CGSize) -> CGPoint {
+        CGPoint(
+            x: point.x * size.width * zoom + pan.width,
+            y: point.y * size.height * zoom + pan.height
+        )
+    }
+
+    func normalizedPoint(for location: CGPoint, in size: CGSize) -> NormalizedPoint {
+        NormalizedPoint(
+            x: (location.x - pan.width) / max(size.width * zoom, 1),
+            y: (location.y - pan.height) / max(size.height * zoom, 1)
+        )
+    }
+
+    func normalizedTranslation(for translation: CGSize, in size: CGSize) -> CGSize {
+        CGSize(
+            width: translation.width / max(size.width * zoom, 1),
+            height: translation.height / max(size.height * zoom, 1)
+        )
+    }
+}
+
+private struct PolygonHitShape: Shape {
+    let points: [CGPoint]
+
+    func path(in rect: CGRect) -> Path {
         Path { path in
-            let points = shape.displayPoints(in: size)
             guard let first = points.first else { return }
             path.move(to: first)
             for point in points.dropFirst() {
@@ -734,14 +881,110 @@ private struct ShapeOverlay: View {
     }
 }
 
+private struct ShapeOverlay: View {
+    private let vertexHandleSize: CGFloat = 14
+    private let vertexDragTargetSize: CGFloat = 50
+
+    @Binding var shape: LayoutShape
+    let size: CGSize
+    let viewport: PlotViewport
+    let isSelected: Bool
+    let isEditable: Bool
+    let isDimmed: Bool
+    let onSelect: () -> Void
+    @State private var shapeDragStartPoints: [NormalizedPoint]?
+    @State private var vertexDragStartPoint: NormalizedPoint?
+
+    var body: some View {
+        ZStack {
+            shapePath
+                .fill(shape.color.swiftUIColor.opacity(shape.kind == .theater ? 0.05 : 0.18))
+            shapePath
+                .stroke(isSelected ? Color.accentColor : shape.color.swiftUIColor.opacity(0.9), lineWidth: isSelected ? 3 : 1.5)
+
+            if isSelected && isEditable {
+                ForEach(shape.points.indices, id: \.self) { index in
+                    VertexHandle(visibleSize: vertexHandleSize, targetSize: vertexDragTargetSize)
+                        .position(viewport.screenPoint(for: shape.points[index], in: size))
+                        .zIndex(10)
+                        .highPriorityGesture(
+                            DragGesture(minimumDistance: 0, coordinateSpace: .named("plot"))
+                                .onChanged { value in
+                                    onSelect()
+                                    let start = vertexDragStartPoint ?? shape.points[index]
+                                    vertexDragStartPoint = start
+                                    shape.points[index] = start.translated(by: viewport.normalizedTranslation(for: value.translation, in: size))
+                                }
+                                .onEnded { _ in
+                                    vertexDragStartPoint = nil
+                                }
+                        )
+                }
+            }
+        }
+        .opacity(isDimmed ? 0.45 : 1)
+        .contentShape(PolygonHitShape(points: shape.displayPoints(in: size, viewport: viewport)))
+        .gesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .named("plot"))
+                .onChanged { value in
+                    onSelect()
+                    guard isEditable else { return }
+                    guard vertexDragStartPoint == nil else { return }
+                    let start = shapeDragStartPoints ?? shape.points
+                    shapeDragStartPoints = start
+                    let translation = viewport.normalizedTranslation(for: value.translation, in: size)
+                    shape.points = start.map { $0.translated(by: translation) }
+                }
+                .onEnded { _ in
+                    shapeDragStartPoints = nil
+                }
+        )
+        .allowsHitTesting(isEditable)
+    }
+
+    private var shapePath: Path {
+        Path { path in
+            let points = shape.displayPoints(in: size, viewport: viewport)
+            guard let first = points.first else { return }
+            path.move(to: first)
+            for point in points.dropFirst() {
+                path.addLine(to: point)
+            }
+            path.closeSubpath()
+        }
+    }
+}
+
+private struct VertexHandle: View {
+    let visibleSize: CGFloat
+    let targetSize: CGFloat
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.primary.opacity(0.001))
+                .frame(width: targetSize, height: targetSize)
+
+                Circle()
+                    .fill(.background)
+                    .overlay(Circle().stroke(Color.accentColor, lineWidth: 2))
+                    .frame(width: visibleSize, height: visibleSize)
+        }
+        .frame(width: targetSize, height: targetSize, alignment: .center)
+        .contentShape(Circle())
+    }
+}
+
 private struct DraggableCueMarker: View {
     @Binding var cue: Cue
     let size: CGSize
+    let viewport: PlotViewport
     let isSelected: Bool
     let isEditable: Bool
     let onSelect: () -> Void
     let onDelete: () -> Void
     let onToggleVisibility: () -> Void
+    @State private var dragStartPosition: NormalizedPoint?
 
     var body: some View {
         Image(systemName: cue.icon.symbolName)
@@ -751,13 +994,18 @@ private struct DraggableCueMarker: View {
             .background(cue.color.swiftUIColor, in: Circle())
             .overlay(Circle().stroke(.white, lineWidth: isSelected ? 4 : 2))
             .shadow(radius: isSelected ? 4 : 1)
-            .position(cue.position.cgPoint(in: size))
+            .position(viewport.screenPoint(for: cue.position, in: size))
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named("plot"))
                     .onChanged { value in
                         onSelect()
                         guard isEditable else { return }
-                        cue.position = NormalizedPoint(location: value.location, in: size)
+                        let start = dragStartPosition ?? cue.position
+                        dragStartPosition = start
+                        cue.position = start.translated(by: viewport.normalizedTranslation(for: value.translation, in: size))
+                    }
+                    .onEnded { _ in
+                        dragStartPosition = nil
                     }
             )
             .contextMenu {
@@ -774,10 +1022,12 @@ private struct DraggableCueMarker: View {
 private struct DraggableSpeakerMarker: View {
     @Binding var speaker: TheaterSpeaker
     let size: CGSize
+    let viewport: PlotViewport
     let isSelected: Bool
     let isEditable: Bool
     let isDimmed: Bool
     let onSelect: () -> Void
+    @State private var dragStartPosition: NormalizedPoint?
 
     var body: some View {
         Text(speaker.role.shortName)
@@ -788,13 +1038,18 @@ private struct DraggableSpeakerMarker: View {
             .overlay(Circle().stroke(isSelected ? Color.primary : Color.white, lineWidth: isSelected ? 3 : 2))
             .opacity(isDimmed ? 0.45 : 1)
             .allowsHitTesting(isEditable)
-            .position(speaker.position.cgPoint(in: size))
+            .position(viewport.screenPoint(for: speaker.position, in: size))
             .gesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named("plot"))
                     .onChanged { value in
                         onSelect()
                         guard isEditable else { return }
-                        speaker.position = NormalizedPoint(location: value.location, in: size)
+                        let start = dragStartPosition ?? speaker.position
+                        dragStartPosition = start
+                        speaker.position = start.translated(by: viewport.normalizedTranslation(for: value.translation, in: size))
+                    }
+                    .onEnded { _ in
+                        dragStartPosition = nil
                     }
             )
     }
@@ -1238,8 +1493,8 @@ private struct LayoutShape: Identifiable, Codable, Sendable {
         return NormalizedPoint(x: x, y: y)
     }
 
-    func displayPoints(in size: CGSize) -> [CGPoint] {
-        points.map { $0.cgPoint(in: size) }
+    func displayPoints(in size: CGSize, viewport: PlotViewport) -> [CGPoint] {
+        points.map { viewport.screenPoint(for: $0, in: size) }
     }
 
     mutating func moveCenter(to newCenter: NormalizedPoint) {
@@ -1423,8 +1678,8 @@ private struct NormalizedPoint: Codable, Sendable {
     var y: Double
 
     init(x: Double, y: Double) {
-        self.x = min(max(x, 0), 1)
-        self.y = min(max(y, 0), 1)
+        self.x = x
+        self.y = y
     }
 
     init(location: CGPoint, in size: CGSize) {
@@ -1433,6 +1688,10 @@ private struct NormalizedPoint: Codable, Sendable {
 
     func cgPoint(in size: CGSize) -> CGPoint {
         CGPoint(x: x * size.width, y: y * size.height)
+    }
+
+    func translated(by translation: CGSize) -> NormalizedPoint {
+        NormalizedPoint(x: x + translation.width, y: y + translation.height)
     }
 }
 
