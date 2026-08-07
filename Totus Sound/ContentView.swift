@@ -10,7 +10,6 @@
 //TODO: Add more icon options
 //TODO: App icon
 //TODO: About section
-//TODO: Add larger clicking area for list items
 //TODO: Keyboard shortcuts (CMD+Z)
 
 import SwiftUI
@@ -119,14 +118,14 @@ struct ContentView: View {
                     } label: {
                         LayoutShapeRow(shape: project.setup.theater, isSelected: selectedLayoutShapeID == project.setup.theater.id)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.glass)
 
                     Button {
                         selectedLayoutShapeID = project.setup.stage.id
                     } label: {
                         LayoutShapeRow(shape: project.setup.stage, isSelected: selectedLayoutShapeID == project.setup.stage.id)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.glass)
                 }
 
                 Section("Regions") {
@@ -136,7 +135,7 @@ struct ContentView: View {
                         } label: {
                             LayoutShapeRow(shape: region, isSelected: selectedLayoutShapeID == region.id)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.glass)
                             .contextMenu {
                                 Button(region.isVisible ? "Hide Region" : "Show Region") {
                                     toggleRegionVisibility(region.id)
@@ -154,6 +153,7 @@ struct ContentView: View {
                     }
                 }
             }
+            //changed from minheight: 260
             .frame(minHeight: 260)
 
             if let selectedLayoutShapeBinding {
@@ -196,7 +196,7 @@ struct ContentView: View {
                     } label: {
                         SpeakerRow(speaker: speaker, isSelected: selectedSpeakerID == speaker.id)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.glass)
                         .contextMenu {
                             Button(speaker.isVisible ? "Hide Speaker" : "Show Speaker") {
                                 toggleSpeakerVisibility(speaker.id)
@@ -267,7 +267,7 @@ struct ContentView: View {
                     } label: {
                         CueListRow(cue: cue, isSelected: cue.id == selectedCueID)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.glass)
                         .contextMenu {
                             Button(cue.isVisible ? "Hide Cue" : "Show Cue") {
                                 toggleCueVisibility(cue.id)
@@ -580,7 +580,7 @@ private struct TheaterPlot: View {
                     }
 
                 grid(in: size, viewport: viewport)
-
+            
                 ShapeOverlay(
                     shape: $project.setup.theater,
                     size: size,
@@ -683,14 +683,15 @@ private struct TheaterPlot: View {
         Canvas { context, _ in
             var path = Path()
             let spacing: CGFloat = 0.1
-            let minX = floor((0 - viewport.pan.width) / max(size.width * viewport.zoom, 1) / spacing) * spacing
-            let maxX = ceil((size.width - viewport.pan.width) / max(size.width * viewport.zoom, 1) / spacing) * spacing
-            let minY = floor((0 - viewport.pan.height) / max(size.height * viewport.zoom, 1) / spacing) * spacing
-            let maxY = ceil((size.height - viewport.pan.height) / max(size.height * viewport.zoom, 1) / spacing) * spacing
+            let worldScale = viewport.worldScale
+            let minX = floor((0 - viewport.pan.width) / max(worldScale * viewport.zoom, 1) / spacing) * spacing
+            let maxX = ceil((size.width - viewport.pan.width) / max(worldScale * viewport.zoom, 1) / spacing) * spacing
+            let minY = floor((0 - viewport.pan.height) / max(worldScale * viewport.zoom, 1) / spacing) * spacing
+            let maxY = ceil((size.height - viewport.pan.height) / max(worldScale * viewport.zoom, 1) / spacing) * spacing
 
             var xValue = minX
             while xValue <= maxX {
-                let x = xValue * size.width * viewport.zoom + viewport.pan.width
+                let x = xValue * worldScale * viewport.zoom + viewport.pan.width
                 path.move(to: CGPoint(x: x, y: 0))
                 path.addLine(to: CGPoint(x: x, y: size.height))
                 xValue += spacing
@@ -698,7 +699,7 @@ private struct TheaterPlot: View {
 
             var yValue = minY
             while yValue <= maxY {
-                let y = yValue * size.height * viewport.zoom + viewport.pan.height
+                let y = yValue * worldScale * viewport.zoom + viewport.pan.height
                 path.move(to: CGPoint(x: 0, y: y))
                 path.addLine(to: CGPoint(x: size.width, y: y))
                 yValue += spacing
@@ -817,6 +818,7 @@ private struct TrackpadViewportReader: NSViewRepresentable {
 }
 
 private struct PlotViewport: Equatable {
+    let worldScale: CGFloat = 720
     var zoom: CGFloat = 1
     var pan: CGSize = .zero
 
@@ -847,22 +849,22 @@ private struct PlotViewport: Equatable {
 
     func screenPoint(for point: NormalizedPoint, in size: CGSize) -> CGPoint {
         CGPoint(
-            x: point.x * size.width * zoom + pan.width,
-            y: point.y * size.height * zoom + pan.height
+            x: point.x * worldScale * zoom + pan.width,
+            y: point.y * worldScale * zoom + pan.height
         )
     }
 
     func normalizedPoint(for location: CGPoint, in size: CGSize) -> NormalizedPoint {
         NormalizedPoint(
-            x: (location.x - pan.width) / max(size.width * zoom, 1),
-            y: (location.y - pan.height) / max(size.height * zoom, 1)
+            x: (location.x - pan.width) / max(worldScale * zoom, 1),
+            y: (location.y - pan.height) / max(worldScale * zoom, 1)
         )
     }
 
     func normalizedTranslation(for translation: CGSize, in size: CGSize) -> CGSize {
         CGSize(
-            width: translation.width / max(size.width * zoom, 1),
-            height: translation.height / max(size.height * zoom, 1)
+            width: translation.width / max(worldScale * zoom, 1),
+            height: translation.height / max(worldScale * zoom, 1)
         )
     }
 }
@@ -1167,6 +1169,7 @@ private struct LayoutShapeInspector: View {
                 }
             }
             Toggle("Visible", isOn: $shape.isVisible)
+                .toggleStyle(.switch)
                 .disabled(shape.kind == .theater)
 
             HStack {
@@ -1202,7 +1205,7 @@ private struct CueInspector: View {
     let onDelete: () -> Void
 
     var body: some View {
-        let calculation = MixCalculator.calculate(cue: cue, setup: setup)
+//        let calculation = MixCalculator.calculate(cue: cue, setup: setup)
 
         VStack(alignment: .leading, spacing: 12) {
             Text("Cue Parameters")
@@ -1230,15 +1233,16 @@ private struct CueInspector: View {
                 }
             }
             Toggle("Visible", isOn: $cue.isVisible)
+                .toggleStyle(.switch)
             CoordinateField(label: "X", value: $cue.position.x)
             CoordinateField(label: "Y", value: $cue.position.y)
 
-            Divider()
-            LabeledContent("Pan", value: calculation.panText)
-            LabeledContent("Center Divergence", value: calculation.centerDivergenceText)
-            LabeledContent("Back Left", value: calculation.backLeftText)
-            LabeledContent("Back Right", value: calculation.backRightText)
-            LabeledContent("Front Bias", value: calculation.frontBiasText)
+//            Divider()
+//            LabeledContent("Pan", value: calculation.panText)
+//            LabeledContent("Center Divergence", value: calculation.centerDivergenceText)
+//            LabeledContent("Back Left", value: calculation.backLeftText)
+//            LabeledContent("Back Right", value: calculation.backRightText)
+//            LabeledContent("Front Bias", value: calculation.frontBiasText)
 
             Button("Delete Cue", role: .destructive, action: onDelete)
         }
@@ -1262,6 +1266,7 @@ private struct SpeakerInspector: View {
                 }
             }
             Toggle("Visible", isOn: $speaker.isVisible)
+                .toggleStyle(.switch)
             CoordinateField(label: "X", value: $speaker.position.x)
             CoordinateField(label: "Y", value: $speaker.position.y)
             Button("Delete Speaker", role: .destructive, action: onDelete)
