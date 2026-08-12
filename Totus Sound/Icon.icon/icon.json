@@ -1,0 +1,295 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.50041,0.13439,0.70433,1.00000",
+      "display-p3:0.20305,0.26188,0.69881,1.00000"
+    ],
+    "orientation" : {
+      "start" : {
+        "x" : 0.5,
+        "y" : 0
+      },
+      "stop" : {
+        "x" : 0.5,
+        "y" : 0.7
+      }
+    }
+  },
+  "groups" : [
+    {
+      "blur-material" : null,
+      "layers" : [
+        {
+          "blend-mode-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "normal"
+            }
+          ],
+          "fill-specializations" : [
+            {
+              "value" : {
+                "linear-gradient" : [
+                  "display-p3:0.20580,0.49058,0.91113,1.00000",
+                  "display-p3:0.54793,0.54793,0.54793,1.00000"
+                ],
+                "orientation" : {
+                  "start" : {
+                    "x" : 0.32743211080208523,
+                    "y" : 0.7821436758870954
+                  },
+                  "stop" : {
+                    "x" : 0.8020860200299885,
+                    "y" : 0.22132050803030562
+                  }
+                }
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "linear-gradient" : [
+                  "display-p3:0.06763,0.00000,1.00000,1.00000",
+                  "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+                ],
+                "orientation" : {
+                  "start" : {
+                    "x" : 0,
+                    "y" : 1
+                  },
+                  "stop" : {
+                    "x" : 0.7881254563863118,
+                    "y" : 0.2176311087446104
+                  }
+                }
+              }
+            }
+          ],
+          "image-name" : "Icon1 2.svg",
+          "name" : "Icon1 2",
+          "opacity-specializations" : [
+            {
+              "value" : 0.85
+            },
+            {
+              "appearance" : "dark",
+              "value" : 0.8
+            }
+          ],
+          "position" : {
+            "scale" : 0.75,
+            "translation-in-points" : [
+              361.0935695017579,
+              36.11250000000007
+            ]
+          }
+        },
+        {
+          "blend-mode-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "lighten"
+            }
+          ],
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "display-p3:0.70988,0.70988,0.70988,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "gray:1.00000,1.00000"
+              }
+            }
+          ],
+          "image-name" : "Icon2.svg",
+          "name" : "Icon2",
+          "opacity-specializations" : [
+            {
+              "value" : 1
+            },
+            {
+              "appearance" : "dark",
+              "value" : 0.6
+            }
+          ],
+          "position" : {
+            "scale" : 0.75,
+            "translation-in-points" : [
+              -170.18393049824203,
+              -4.258749999999964
+            ]
+          }
+        },
+        {
+          "blend-mode-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "lighten"
+            }
+          ],
+          "fill-specializations" : [
+            {
+              "value" : {
+                "linear-gradient" : [
+                  "display-p3:0.20580,0.49058,0.91113,1.00000",
+                  "display-p3:0.54793,0.54793,0.54793,1.00000"
+                ],
+                "orientation" : {
+                  "start" : {
+                    "x" : 0.6546846431906225,
+                    "y" : 0.26745461987232416
+                  },
+                  "stop" : {
+                    "x" : 0.20093015041542206,
+                    "y" : 0.822848470742992
+                  }
+                }
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "linear-gradient" : [
+                  "display-p3:0.06763,0.00000,1.00000,1.00000",
+                  "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+                ],
+                "orientation" : {
+                  "start" : {
+                    "x" : 1,
+                    "y" : 0
+                  },
+                  "stop" : {
+                    "x" : 0.17604782622547446,
+                    "y" : 0.8080778300259341
+                  }
+                }
+              }
+            }
+          ],
+          "image-name" : "Icon3.svg",
+          "name" : "Icon3",
+          "opacity-specializations" : [
+            {
+              "value" : 0.85
+            },
+            {
+              "appearance" : "dark",
+              "value" : 0.8
+            }
+          ],
+          "position" : {
+            "scale" : 0.75,
+            "translation-in-points" : [
+              -158.8889304982422,
+              474.85625000000005
+            ]
+          }
+        },
+        {
+          "blend-mode-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "lighten"
+            }
+          ],
+          "fill-specializations" : [
+            {
+              "value" : {
+                "linear-gradient" : [
+                  "display-p3:0.20580,0.49058,0.91113,1.00000",
+                  "display-p3:0.54793,0.54793,0.54793,1.00000"
+                ],
+                "orientation" : {
+                  "start" : {
+                    "x" : 0.2873553587958924,
+                    "y" : 0.2734976079124678
+                  },
+                  "stop" : {
+                    "x" : 0.7692162108145516,
+                    "y" : 0.8002881072718627
+                  }
+                }
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "linear-gradient" : [
+                  "display-p3:0.06763,0.00000,1.00000,1.00000",
+                  "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+                ],
+                "orientation" : {
+                  "start" : {
+                    "x" : 0,
+                    "y" : 0
+                  },
+                  "stop" : {
+                    "x" : 0.8002551949486213,
+                    "y" : 0.7831132639102892
+                  }
+                }
+              }
+            }
+          ],
+          "image-name" : "Icon4 2.svg",
+          "name" : "Icon4 2",
+          "opacity-specializations" : [
+            {
+              "value" : 0.85
+            },
+            {
+              "appearance" : "dark",
+              "value" : 0.8
+            }
+          ],
+          "position" : {
+            "scale" : 0.75,
+            "translation-in-points" : [
+              273.71106950175795,
+              509.5875000000001
+            ]
+          }
+        },
+        {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "display-p3:0.20580,0.49058,0.91113,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "display-p3:0.06763,0.00000,1.00000,1.00000"
+              }
+            }
+          ],
+          "glass" : true,
+          "image-name" : "iconcirle.svg",
+          "name" : "iconcirle",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              5.349819501757906,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
