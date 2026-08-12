@@ -6,8 +6,6 @@
 //
 
 //TODO: Add save state, so you can return to a project.
-//TODO: App icon
-//TODO: About section
 //TODO: Keyboard shortcuts (CMD+Z)
 
 import SwiftUI
