@@ -465,8 +465,8 @@ struct ContentView: View {
 
     private func exportSetup() {
         do {
-            let data = try JSONEncoder.pretty.encode(project.setup)
-            let filename = safeFilename(project.setup.name, fallback: "Totus-Theater-Setup") + "-Setup.json"
+            let data = try JSONEncoder.pretty.encode(project)
+            let filename = safeFilename(project.setup.name, fallback: "Totus-Theater-Setup") + "-Project.json"
             
             let panel = NSSavePanel()
             panel.nameFieldStringValue = filename
@@ -634,8 +634,10 @@ private struct TheaterPlot: View {
                     isSelected: selectedLayoutShapeID == project.setup.theater.id,
                     isEditable: mode == .layout,
                     isDimmed: false,
+                    showsHandles: false,
                     onSelect: { selectedLayoutShapeID = project.setup.theater.id }
                 )
+                .zIndex(-2)
 
                 if project.setup.stage.isVisible {
                     ShapeOverlay(
@@ -645,8 +647,10 @@ private struct TheaterPlot: View {
                         isSelected: selectedLayoutShapeID == project.setup.stage.id,
                         isEditable: mode == .layout,
                         isDimmed: false,
+                        showsHandles: false,
                         onSelect: { selectedLayoutShapeID = project.setup.stage.id }
                     )
+                    .zIndex(1)
                 }
 
                 ForEach($project.setup.regions) { $region in
@@ -658,10 +662,16 @@ private struct TheaterPlot: View {
                             isSelected: selectedLayoutShapeID == region.id,
                             isEditable: mode == .layout,
                             isDimmed: mode == .cues,
+                            showsHandles: false,
                             onSelect: { selectedLayoutShapeID = region.id }
                         )
-                        .zIndex(selectedLayoutShapeID == region.id ? 1 : 0)
+                        .zIndex(2)
                     }
+                }
+
+                if mode == .layout {
+                    selectedShapeHandles(size: size)
+                        .zIndex(30)
                 }
 
                 if mode.showsSpeakers {
@@ -751,6 +761,23 @@ private struct TheaterPlot: View {
                 yValue += spacing
             }
             context.stroke(path, with: .color(.secondary.opacity(0.16)), lineWidth: 1)
+        }
+    }
+
+    @ViewBuilder
+    private func selectedShapeHandles(size: CGSize) -> some View {
+        if project.setup.theater.id == selectedLayoutShapeID {
+            ShapeVertexHandles(shape: $project.setup.theater, size: size, viewport: viewport, onSelect: {
+                selectedLayoutShapeID = project.setup.theater.id
+            })
+        } else if project.setup.stage.id == selectedLayoutShapeID {
+            ShapeVertexHandles(shape: $project.setup.stage, size: size, viewport: viewport, onSelect: {
+                selectedLayoutShapeID = project.setup.stage.id
+            })
+        } else if let index = project.setup.regions.firstIndex(where: { $0.id == selectedLayoutShapeID }) {
+            ShapeVertexHandles(shape: $project.setup.regions[index], size: size, viewport: viewport, onSelect: {
+                selectedLayoutShapeID = project.setup.regions[index].id
+            })
         }
     }
 }
@@ -940,6 +967,7 @@ private struct ShapeOverlay: View {
     let isSelected: Bool
     let isEditable: Bool
     let isDimmed: Bool
+    let showsHandles: Bool
     let onSelect: () -> Void
     
     @State private var shapeDragStartPoints: [NormalizedPoint]?
@@ -971,7 +999,7 @@ private struct ShapeOverlay: View {
                     }
             )
 
-            if isSelected && isEditable {
+            if showsHandles && isSelected && isEditable {
                 ForEach(shape.points.indices, id: \.self) { index in
                     VertexHandle(visibleSize: vertexHandleSize, targetSize: vertexDragTargetSize)
                         .highPriorityGesture(
@@ -1006,6 +1034,40 @@ private struct ShapeOverlay: View {
             }
             path.closeSubpath()
         }
+    }
+}
+
+private struct ShapeVertexHandles: View {
+    private let vertexHandleSize: CGFloat = 14
+    private let vertexDragTargetSize: CGFloat = 50
+
+    @Binding var shape: LayoutShape
+    let size: CGSize
+    let viewport: PlotViewport
+    let onSelect: () -> Void
+
+    @State private var vertexDragStartPoint: NormalizedPoint?
+
+    var body: some View {
+        ZStack {
+            ForEach(shape.points.indices, id: \.self) { index in
+                VertexHandle(visibleSize: vertexHandleSize, targetSize: vertexDragTargetSize)
+                    .position(viewport.screenPoint(for: shape.points[index], in: size))
+                    .highPriorityGesture(
+                        DragGesture(minimumDistance: 0, coordinateSpace: .named("plot"))
+                            .onChanged { value in
+                                onSelect()
+                                let start = vertexDragStartPoint ?? shape.points[index]
+                                vertexDragStartPoint = start
+                                shape.points[index] = start.translated(by: viewport.normalizedTranslation(for: value.translation, in: size))
+                            }
+                            .onEnded { _ in
+                                vertexDragStartPoint = nil
+                            }
+                    )
+            }
+        }
+        .frame(width: size.width, height: size.height)
     }
 }
 

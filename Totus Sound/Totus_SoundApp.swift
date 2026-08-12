@@ -59,7 +59,7 @@ private struct TheaterFileCommands: Commands {
 
             Divider()
 
-            Button("Export Setup...") {
+            Button("Save Setup...") {
                 fileCommands?.exportSetup()
             }
             .keyboardShortcut("s", modifiers: [.command, .shift])
