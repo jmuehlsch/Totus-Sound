@@ -637,7 +637,7 @@ private struct TheaterPlot: View {
                     showsHandles: false,
                     onSelect: { selectedLayoutShapeID = project.setup.theater.id }
                 )
-                .zIndex(-2)
+                .zIndex(0.5)
 
                 if project.setup.stage.isVisible {
                     ShapeOverlay(
