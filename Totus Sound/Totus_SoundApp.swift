@@ -15,8 +15,29 @@ struct Totus_SoundApp: App {
         }
         .commands {
             TheaterFileCommands()
-        }
+        }    .commands {
+                   CommandGroup(replacing: .appInfo) {
+                       Button("About Totus") {
+                           NSApplication.shared.orderFrontStandardAboutPanel(
+                               options: [
+                                   NSApplication.AboutPanelOptionKey.credits: NSAttributedString(
+                                       string: "Parametric Immersive Sound Calculator using Simple Custom Loudspeaker Setups",
+                                       attributes: [
+                                           NSAttributedString.Key.font: NSFont.boldSystemFont(
+                                               ofSize: NSFont.smallSystemFontSize)
+                                       ]
+                                   ),
+                                   NSApplication.AboutPanelOptionKey(
+                                       rawValue: "Copyright"
+                                   ): "© 2026 Julian Muehlschlegel"
+                               ]
+                           )
+                       }
+                   }
+               }
+        
     }
+    
 }
 
 private struct TheaterFileCommands: Commands {
