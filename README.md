@@ -1,7 +1,7 @@
 First Release is Available!
 Please report any issues on the repo.
 
-Compatible with all versions of MacOS Tahoe 26
+Compatible with all versions of MacOS Tahoe 26.
 
 How to install:
  1. Download the DMG
