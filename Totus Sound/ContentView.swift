@@ -5,9 +5,7 @@
 //  Created by Julian Muehlschlegel on 8/2/26.
 //
 
-//TODO: Add more colour options
 //TODO: Add save state, so you can return to a project.
-//TODO: Add more icon options
 //TODO: App icon
 //TODO: About section
 //TODO: Keyboard shortcuts (CMD+Z)
@@ -399,7 +397,7 @@ struct ContentView: View {
     }
 
     private func addCue() {
-        let cue = Cue(name: "Cue \(project.cues.count + 1)", position: NormalizedPoint(x: 0.5, y: 0.5), color: .teal, icon: .bolt)
+        let cue = Cue(name: "Cue \(project.cues.count + 1)", position: NormalizedPoint(x: 0.5, y: 0.5), color: .aquamarine, icon: .bolt)
         project.cues.append(cue)
         selectedCueID = cue.id
         selectedTab = .cues
@@ -1421,7 +1419,7 @@ private struct TheaterProject: Codable, Sendable {
     static let blank = TheaterProject(setup: .blank, cues: [])
     static let sample = TheaterProject(setup: .sample, cues: [
         Cue(name: "Door Slam", position: NormalizedPoint(x: 0.22, y: 0.78), color: .red, icon: .burst),
-        Cue(name: "Phone Ring", position: NormalizedPoint(x: 0.68, y: 0.42), color: .teal, icon: .bell)
+        Cue(name: "Phone Ring", position: NormalizedPoint(x: 0.68, y: 0.42), color: .aquamarine, icon: .bell)
     ])
 }
 
@@ -1818,23 +1816,42 @@ private enum SpeakerRole: String, CaseIterable, Identifiable, Codable, Sendable 
 }
 
 private enum CueColor: String, CaseIterable, Identifiable, Codable, Sendable {
-    case teal = "Teal"
+    case aquamarine = "Aquamarine"
     case red = "Red"
     case amber = "Amber"
     case blue = "Blue"
     case violet = "Violet"
     case green = "Green"
+    case black = "Black"
+    case white = "White"
+    case yellow = "Yellow"
+    case mint = "Mint"
+    case cyan = "Cyan"
+    case indigo = "Indigo"
+    case pink = "Pink"
+    case brown = "Brown"
+    case gray = "Gray"
 
     var id: String { rawValue }
 
     var swiftUIColor: Color {
         switch self {
-        case .teal: .teal
+        case .aquamarine: .teal
         case .red: .red
         case .amber: .orange
         case .blue: .blue
         case .violet: .purple
         case .green: .green
+        case .black: .black
+        case .white: .white
+        case .yellow: .yellow
+        case .mint: .mint
+        case .cyan: .cyan
+        case .indigo: .indigo
+        case .pink: .pink
+        case .brown: .brown
+        case .gray: .gray
+            
         }
     }
 }
@@ -1846,6 +1863,48 @@ private enum CueIcon: String, CaseIterable, Identifiable, Codable, Sendable {
     case music = "Music"
     case voice = "Voice"
     case ambience = "Ambience"
+    case lasso = "Lasso"
+    case person = "Person"
+    case star = "Star"
+    case heart = "Heart"
+    case checkmark = "Checkmark"
+    case xmark = "Xmark"
+    case gear = "Gear"
+    case camera = "Camera"
+    case photo = "Photo"
+    case mail = "Mail"
+    case home = "Home"
+    case search = "Search"
+    case play = "Play"
+    case volume = "Volume"
+    case mic = "Mic"
+    case clock = "Clock"
+    case calendar = "Calendar"
+    //theater
+    case masks = "Masks"
+    case ticket = "Ticket"
+    case film = "Film"
+    case popcorn = "Popcorn"
+    case megaphone = "Megaphone"
+    case sliders = "Sliders"
+    case lightbulb = "Lightbulb"
+    case video = "Video"
+    
+    //objects
+    case game = "Game"
+    case dice = "Dice"
+    case palette = "Palette"
+    case magicWand = "Magic Wand"
+    case puzzle = "Puzzle"
+    case gift = "Gift"
+    case crown = "Crown"
+    case sunglasses = "Sunglasses"
+    case coffee = "Coffee"
+    case dining = "Dining"
+    case cake = "Cake"
+    case carrot = "Carrot"
+    
+    
 
     var id: String { rawValue }
 
@@ -1857,6 +1916,47 @@ private enum CueIcon: String, CaseIterable, Identifiable, Codable, Sendable {
         case .music: "music.note"
         case .voice: "waveform"
         case .ambience: "wind"
+        case .lasso: "lasso.badge.sparkles"
+        case .person: "person.fill"
+        case .star: "star.fill"
+        case .heart: "heart.fill"
+        case .checkmark: "checkmark"
+        case .xmark: "xmark"
+        case .gear: "gearshape.fill"
+        case .camera: "camera.fill"
+        case .photo: "photo.fill"
+        case .mail: "envelope.fill"
+        case .home: "house.fill"
+        case .search: "magnifyingglass"
+        case .play: "play.fill"
+        case .volume: "speaker.wave.2.fill"
+        case .mic: "mic.fill"
+        case .clock: "clock.fill"
+        case .calendar: "calendar"
+            
+        //theater
+        case .masks: "theatermasks.fill"
+        case .ticket: "ticket.fill"
+        case .film: "film.fill"
+        case .popcorn: "popcorn.fill"
+        case .megaphone: "megaphone.fill"
+        case .sliders: "slider.horizontal.3"
+        case .lightbulb: "lightbulb.fill"
+        case .video: "video.fill"
+            
+        //objects
+        case .game: "gamecontroller.fill"
+        case .dice: "dice.fill"
+        case .palette: "paintpalette.fill"
+        case .magicWand: "wand.and.stars"
+        case .puzzle: "puzzlepiece.fill"
+        case .gift: "gift.fill"
+        case .crown: "crown.fill"
+        case .sunglasses: "sunglasses.fill"
+        case .coffee: "cup.and.saucer.fill"
+        case .dining: "fork.knife"
+        case .cake: "birthday.cake.fill"
+        case .carrot: "carrot.fill"
         }
     }
 }
